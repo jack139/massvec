@@ -11,6 +11,7 @@ import (
 
 var (
 	X [][]float64
+	min float64
 )
 
 // 从文件载入测试数据
@@ -51,6 +52,8 @@ func edist(x []float64, y []float64) float64 {
 
 
 func main(){
+	min = 9999999999.0
+
 	readData()
 
 	fmt.Println("num= ", len(X), "\tdim= ", len(X[0]))
@@ -61,12 +64,14 @@ func main(){
 		for j:=0; j<len(X); j++ {
 			dist := edist(X[i], X[j])
 			//fmt.Printf("%.8f ", dist)
-			dist += 1
+			if i!=j && dist<min {
+				min = dist
+			}
 		}
 		//fmt.Println()
 	}
 
-	fmt.Printf("dist times: %d\n", len(X)*len(X))
+	fmt.Printf("dist times: %d\tmin= %.8f\n", len(X)*len(X), min)
 
 	elapsed := time.Since(start)
 	fmt.Printf("[Time taken: %.10fs %v]\n", elapsed.Seconds(), elapsed)
