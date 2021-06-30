@@ -13,6 +13,7 @@ var (
 	X [][]float64
 )
 
+// 从文件载入测试数据
 func readData(){
 	b, err := ioutil.ReadFile("vector.data") 
 	if err != nil {
@@ -36,6 +37,7 @@ func readData(){
 	}
 }
 
+// 计算欧式距离
 func edist(x []float64, y []float64) float64 {
 	var sum float64
 	sum = 0.0
