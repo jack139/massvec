@@ -5,5 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
+*.o
 
 *.data
+
+edist2
+edist3
+edistCUDA
