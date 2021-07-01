@@ -1,5 +1,5 @@
 # Location of the CUDA Toolkit
-CUDA_PATH ?= "/usr/local/cuda-10.0"
+CUDA_PATH ?= "/usr/local/cuda"
 
 ##############################
 # start deprecated interface #
@@ -24,7 +24,7 @@ HOST_OS   := $(shell uname -s 2>/dev/null | tr "[:upper:]" "[:lower:]")
 TARGET_OS ?= $(HOST_OS)
 
 # host compiler
-HOST_COMPILER ?= g++
+HOST_COMPILER ?= g++-7
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # internal flags

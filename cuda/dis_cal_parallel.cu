@@ -1,12 +1,14 @@
+#include <sys/time.h>
 #include<iostream>                                                                                                       
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
 
+
 using namespace std;
 
-const int N = 10;
-const int D = 8;
+const int N = 100;
+const int D = 10;
 const int MAX = 10;
 
 __global__ void cal_dis(int *train_data, int *test_data, int *dis,int pitch)
@@ -53,6 +55,9 @@ int main()
  
 	int *d_train_data , *d_test_data , *d_dis;
  
+ 	struct timeval t1,t2;
+    double timeuse;
+
 	size_t pitch_d;
 	size_t pitch_h = D * sizeof(int) ;
  
@@ -80,6 +85,8 @@ int main()
 	cout<<"testing data:"<<endl;
 	print(h_test_data,D);
  
+	gettimeofday(&t1,NULL);
+
 	//copy training and testing data from host to device
 	cudaMemcpy2D( d_train_data , pitch_d , h_train_data , pitch_h , D * sizeof(int) , N , cudaMemcpyHostToDevice );
 	cudaMemcpy( d_test_data,  h_test_data ,  D*sizeof(int), cudaMemcpyHostToDevice);
@@ -89,13 +96,18 @@ int main()
  
 	//copy distance data from device to host
 	cudaMemcpy( distance , d_dis  , N*sizeof(int) , cudaMemcpyDeviceToHost);
+
+	gettimeofday(&t2,NULL);
  
-	cout<<"distance:"<<endl;;
+	cout<<"distance:"<<endl;
 	print(distance , N);
- 
+
 	cudaFree(d_train_data);
 	cudaFree(d_test_data);
 	cudaFree(d_dis);
  
+ 	timeuse = (t2.tv_sec - t1.tv_sec) + (double)(t2.tv_usec - t1.tv_usec)/1000000.0;
+  	cout << "[ time taken: " << timeuse << "s ]" << endl;
+
 	return 0;
 }  
