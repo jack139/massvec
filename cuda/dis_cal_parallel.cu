@@ -11,11 +11,11 @@ using namespace std;
 const int D = 2048;
 const int N1 = 10000; // 数据文件条数
 const int D1 = 1; // 数据重复倍数，方便模拟海量数据
-const int N = N1*D1;
+const long N = N1*D1;
 
 __global__ void cal_dis(float *train_data, float *test_data, float *dis, int pitch)
 {
-	int tid = blockIdx.x;
+	long tid = blockIdx.x;
 	if(tid<N)
 	{
 		float temp = 0.0;
@@ -32,7 +32,7 @@ __global__ void cal_dis(float *train_data, float *test_data, float *dis, int pit
 void print(float *data)
 {
 	cout<<"training data:"<<endl;
-	for(int i=0;i<N;i++)
+	for(long i=0;i<N;i++)
 	{
 		for(int j=0;j<D;j++)
 		{

@@ -57,3 +57,18 @@ num=  1000 	dim=  2048
 dist times: 1000000
 [Time taken: 2.8235832940s 2.823583294s]
 ```
+
+### Tesla T4
+```
+$ ./edistCUDA
+num= 10000 	dim= 2048
+[ Time taken: 0.021270s ]
+
+$ ./edistCUDA
+num= 100000 	dim= 2048
+[ Time taken: 0.207766s ]
+
+$ ./edistCUDA
+num= 1000000 	dim= 2048
+[ Time taken: 0.072613s ]
+```
