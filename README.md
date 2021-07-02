@@ -22,14 +22,14 @@ dist times: 1000000
 [Time taken: 0:00:11.873225]
 
 $ go run edist2.go 
-num=  1000 	dim=  2048
-dist times: 1000000
-[Time taken: 2.3769506390s 2.376950639s]
+num=  1000000 	dim=  2048
+dist times: 1000000	min= 314.18320066
+[Time taken: 2.5643539700s 2.56435397s]
 
 $ go run edist3.go 
-num=  1000 	dim=  2048
-goroutine: 8	dist times: 1000000	min= 17.33560313
-[Time taken: 0.3739083160s 373.908316ms]
+num=  1000000 	dim=  2048
+goroutine: 8	dist times: 1000000	min= 314.18320066
+[Time taken: 0.6264369020s 626.436902ms]
 ```
 
 ### 4核16G Xeon服务器

@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 
 dim = 10
-n = 10 # 100 000 000
+n = 10
 
 ff = open('vector.data', 'w')
 

@@ -8,20 +8,20 @@
 
 using namespace std;
 
-const int N = 10;
-const int D = 10;
+const int N = 10000;
+const int D = 2048;
 
 
-__global__ void cal_dis(double *train_data, double *test_data, double *dis,int pitch)
+__global__ void cal_dis(double *train_data, double *test_data, double *dis, int pitch)
 {
 	int tid = blockIdx.x;
 	if(tid<N)
 	{
-		int temp = 0;
-		int sum = 0;
+		double temp = 0.0;
+		double sum = 0.0;
 		for(int i=0;i<D;i++)
 		{
-			temp = *((int*)((char*)train_data + tid * pitch) + i) - test_data[i];
+			temp = *((double*)((char*)train_data + tid * pitch) + i) - test_data[i];
 			sum += temp * temp;
 		}
 		dis[tid] = sum;
@@ -69,7 +69,7 @@ int read_data(double *data_set)
 
 	// 读N+1行，最后1行做测试
 	for(int i=0;i<N+1;i++) {
-		if( fgets (line, 20*2048*sizeof(char), fp)!=NULL ) {
+		if( fgets (line, 20*D*sizeof(char), fp)!=NULL ) {
 			token = strtok(line, s);
 
 			int j = 0;
@@ -106,7 +106,7 @@ int main()
 	struct timeval t1,t2;
 	double timeuse;
 
-	h_train_data = (double *)malloc((N+1)*D*sizeof(double));
+	h_train_data = (double*)malloc((N+1)*D*sizeof(double));
 	if (h_train_data==NULL){
 		puts("alloc memory fail!");
 		exit(-1);
@@ -116,13 +116,13 @@ int main()
 	size_t pitch_h = D * sizeof(double) ; 
 
 	//allocate memory on GPU 
-	cudaMallocPitch( &d_train_data , &pitch_d , D * sizeof(double) , N ); 
-	cudaMalloc( (void**)&d_test_data ,  D*sizeof(double) );
-	cudaMalloc( (void**)&d_dis , N*sizeof(double) );
+	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(double), N); 
+	cudaMalloc((void**)&d_test_data, D*sizeof(double));
+	cudaMalloc((void**)&d_dis, N*sizeof(double));
 
 	//initialize training data
 	read_data(h_train_data);
-	print(h_train_data);
+	//print(h_train_data);
  
 	//initialize testing data
 	h_test_data = h_train_data+D*N;
@@ -132,19 +132,19 @@ int main()
 	gettimeofday(&t1,NULL);
 
 	//copy training and testing data from host to device
-	cudaMemcpy2D( d_train_data , pitch_d , h_train_data , pitch_h , D * sizeof(double) , N , cudaMemcpyHostToDevice );
-	cudaMemcpy( d_test_data,  h_test_data ,  D*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(double), N, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_test_data, h_test_data, D*sizeof(double), cudaMemcpyHostToDevice);
  
 	//calculate the distance
-	cal_dis<<<N,1>>>( d_train_data,d_test_data,d_dis,pitch_d );
+	cal_dis<<<N,1>>>(d_train_data,d_test_data,d_dis,pitch_d);
  
 	//copy distance data from device to host
-	cudaMemcpy( distance , d_dis  , N*sizeof(double) , cudaMemcpyDeviceToHost);
+	cudaMemcpy(distance, d_dis, N*sizeof(double), cudaMemcpyDeviceToHost);
 
-	gettimeofday(&t2,NULL);
+	gettimeofday(&t2, NULL);
  
 	cout<<"distance:"<<endl;
-	print(distance , N);
+	print(distance, N);
 
 	cudaFree(d_train_data);
 	cudaFree(d_test_data);

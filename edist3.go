@@ -12,6 +12,7 @@ import (
 // go routine 数量, 建议与cpu核数一致
 const (
 	GONUM = 8
+	D = 100
 )
 
 var (
@@ -33,16 +34,24 @@ func readData(){
 	for i:=0;i<len(lines);i++ {
 		if len(lines[i])==0 { continue } // 过滤掉空行
 		xx := strings.Split(lines[i], ",")
-		if len(X)<i+1 { // 添加一个新向量
-			X = append(X, make([]float64, 0))
-		}
+		X = append(X, make([]float64, 0))
 		for _,fs := range xx {
 			f, _ := strconv.ParseFloat(fs, 64)
-			X[i] = append(X[i], f)
+			X[N+i] = append(X[N+i], f)
 			//fmt.Printf("%.8f ", f)
 		}
 		//fmt.Println()
 	}
+
+	N = len(X)-1
+	test := X[N] // 保存测试向量（最后一个）
+	X = X[:N] // 删除最后一个
+
+	for d:=1;d<D;d++ { // 复制 D-1 次
+		X = append(X, X[:N]...)
+	}
+
+	X = append(X, test) // 追加测试向量
 
 	N = len(X)-1
 }
@@ -66,12 +75,12 @@ func findMin(start int, end int, ch chan string) {
 	min1 = 999999999.0
 	for i:=start; i<end; i++ {
 		dist := edist(X[i], X[N])
-		fmt.Printf("%.8f ", dist)
+		//fmt.Printf("%.8f ", dist)
 		if dist<min1 {
 			min1 = dist
 		}
 	}
-	fmt.Println()
+	//fmt.Println()
 
 	ch<- fmt.Sprintf("%.16f", min1)
 }
