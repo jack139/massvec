@@ -12,7 +12,7 @@ import (
 // go routine 数量, 建议与cpu核数一致
 const (
 	GONUM = 8
-	D = 100
+	D = 100 // 翻倍，模拟海量数据
 )
 
 var (

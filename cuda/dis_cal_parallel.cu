@@ -8,9 +8,10 @@
 
 using namespace std;
 
-const int N = 10000;
 const int D = 2048;
-
+const int N1 = 10000; // 数据文件条数
+const int D1 = 1; // 数据重复倍数，方便模拟海量数据
+const int N = N1*D1;
 
 __global__ void cal_dis(double *train_data, double *test_data, double *dis, int pitch)
 {
@@ -57,6 +58,7 @@ int read_data(double *data_set)
 	const char s[2] = ",";
 	char *token, *line;
 	FILE *fp;
+	double test[D];
 
 	// 一个数字假设占20字符，目前是保留16位小数，一共18个字符
 	line = (char *)malloc(20*D*sizeof(char)); 
@@ -68,7 +70,7 @@ int read_data(double *data_set)
 	}
 
 	// 读N+1行，最后1行做测试
-	for(int i=0;i<N+1;i++) {
+	for(int i=0;i<N1+1;i++) {
 		if( fgets (line, 20*D*sizeof(char), fp)!=NULL ) {
 			token = strtok(line, s);
 
@@ -76,7 +78,7 @@ int read_data(double *data_set)
 			while (token != NULL)
 			{
 				f1 = atof(token);
-				//printf("%.16f ", f1);
+				//printf("%.8f ", f1);
 				*(data_set+i*D+j)=f1;
 
 				token = strtok(NULL, s);
@@ -93,6 +95,18 @@ int read_data(double *data_set)
 
 	free(line);
 
+	for(int i=0;i<D;i++) test[i]=*(data_set+N1*D+i); // 保存测试向量
+
+	for(int d=1;d<D1;d++){ // 复制数据
+		for(int i=0;i<N1;i++){
+			for(int j=0;j<D;j++){
+				*(data_set+(N1*d+i)*D+j)= *(data_set+i*D+j);
+			}
+		}
+	}
+
+	for(int i=0;i<D;i++) *(data_set+N*D+i)=test[i]; // 恢复测试向量
+
 	return 0;
 }
 
@@ -105,6 +119,8 @@ int main()
  
 	struct timeval t1,t2;
 	double timeuse;
+
+	cout<<"num= "<<N<<"\tdim= "<<D<<endl;
 
 	h_train_data = (double*)malloc((N+1)*D*sizeof(double));
 	if (h_train_data==NULL){
@@ -127,7 +143,7 @@ int main()
 	//initialize testing data
 	h_test_data = h_train_data+D*N;
 	cout<<"testing data:"<<endl;
-	print(h_test_data,D);
+	//print(h_test_data,D);
  
 	gettimeofday(&t1,NULL);
 
@@ -144,7 +160,7 @@ int main()
 	gettimeofday(&t2, NULL);
  
 	cout<<"distance:"<<endl;
-	print(distance, N);
+	//print(distance, N);
 
 	cudaFree(d_train_data);
 	cudaFree(d_test_data);
