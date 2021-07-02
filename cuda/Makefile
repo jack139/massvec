@@ -24,7 +24,8 @@ HOST_OS   := $(shell uname -s 2>/dev/null | tr "[:upper:]" "[:lower:]")
 TARGET_OS ?= $(HOST_OS)
 
 # host compiler
-HOST_COMPILER ?= g++-7
+#HOST_COMPILER ?= g++-7
+HOST_COMPILER ?= g++
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # internal flags
