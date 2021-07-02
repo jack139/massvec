@@ -13,23 +13,23 @@ const int N1 = 10000; // 数据文件条数
 const int D1 = 1; // 数据重复倍数，方便模拟海量数据
 const int N = N1*D1;
 
-__global__ void cal_dis(float *train_data, float *test_data, float *dis, int pitch)
+__global__ void cal_dis(double *train_data, double *test_data, double *dis, int pitch)
 {
 	int tid = blockIdx.x;
 	if(tid<N)
 	{
-		float temp = 0.0;
-		float sum = 0.0;
+		double temp = 0.0;
+		double sum = 0.0;
 		for(int i=0;i<D;i++)
 		{
-			temp = *((float*)((char*)train_data + tid * pitch) + i) - test_data[i];
+			temp = *((double*)((char*)train_data + tid * pitch) + i) - test_data[i];
 			sum += temp * temp;
 		}
 		dis[tid] = sum;
 	}
 }
 
-void print(float *data)
+void print(double *data)
 {
 	cout<<"training data:"<<endl;
 	for(int i=0;i<N;i++)
@@ -42,7 +42,7 @@ void print(float *data)
 	}
 }
  
-void print(float *data, int n)
+void print(double *data, int n)
 {
 	for(int i=0;i<n;i++)
 	{
@@ -52,13 +52,13 @@ void print(float *data, int n)
 }
 
 
-int read_data(float *data_set)
+int read_data(double *data_set)
 {
-	float f1;
+	double f1;
 	const char s[2] = ",";
 	char *token, *line;
 	FILE *fp;
-	float test[D];
+	double test[D];
 
 	// 一个数字假设占20字符，目前是保留16位小数，一共18个字符
 	line = (char *)malloc(20*D*sizeof(char)); 
@@ -112,29 +112,29 @@ int read_data(float *data_set)
 
 int main()
 {
-	float *h_train_data, *h_test_data;
-	float distance[N];
+	double *h_train_data, *h_test_data;
+	double distance[N];
  
-	float *d_train_data , *d_test_data , *d_dis;
+	double *d_train_data , *d_test_data , *d_dis;
  
 	struct timeval t1,t2;
 	double timeuse;
 
 	cout<<"num= "<<N<<"\tdim= "<<D<<endl;
 
-	h_train_data = (float*)malloc((N+1)*D*sizeof(float));
+	h_train_data = (double*)malloc((N+1)*D*sizeof(double));
 	if (h_train_data==NULL){
 		puts("alloc memory fail!");
 		exit(-1);
 	}
 
 	size_t pitch_d;
-	size_t pitch_h = D * sizeof(float) ; 
+	size_t pitch_h = D * sizeof(double) ; 
 
 	//allocate memory on GPU 
-	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(float), N); 
-	cudaMalloc((void**)&d_test_data, D*sizeof(float));
-	cudaMalloc((void**)&d_dis, N*sizeof(float));
+	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(double), N); 
+	cudaMalloc((void**)&d_test_data, D*sizeof(double));
+	cudaMalloc((void**)&d_dis, N*sizeof(double));
 
 	//initialize training data
 	read_data(h_train_data);
@@ -148,14 +148,14 @@ int main()
 	gettimeofday(&t1,NULL);
 
 	//copy training and testing data from host to device
-	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(float), N, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_test_data, h_test_data, D*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(double), N, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_test_data, h_test_data, D*sizeof(double), cudaMemcpyHostToDevice);
  
 	//calculate the distance
 	cal_dis<<<N,1>>>(d_train_data,d_test_data,d_dis,pitch_d);
  
 	//copy distance data from device to host
-	cudaMemcpy(distance, d_dis, N*sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(distance, d_dis, N*sizeof(double), cudaMemcpyDeviceToHost);
 
 	gettimeofday(&t2, NULL);
  
