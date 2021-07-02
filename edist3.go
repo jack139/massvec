@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math"
+	//"math"
 	"time"
 	"io/ioutil"
 	"strings"
@@ -16,6 +16,7 @@ const (
 
 var (
 	X [][]float64
+	N int
 )
 
 // 从文件载入测试数据
@@ -38,36 +39,40 @@ func readData(){
 		for _,fs := range xx {
 			f, _ := strconv.ParseFloat(fs, 64)
 			X[i] = append(X[i], f)
+			//fmt.Printf("%.8f ", f)
 		}
+		//fmt.Println()
 	}
+
+	N = len(X)-1
 }
 
-// 计算欧式距离
+// 计算欧式距离, 不开根号
 func edist(x []float64, y []float64) float64 {
 	var sum float64
 	sum = 0.0
 	for i:=0;i<len(x);i++ {
 		sum += (x[i]-y[i])*(x[i]-y[i])
 	}
-	result := math.Sqrt(sum)
+	//result := math.Sqrt(sum)
 
-	return result
+	return sum
 }
 
+// 用X中最后1个向量做测试
 func findMin(start int, end int, ch chan string) {
 	//fmt.Println("-->", start, end)
 	var min1 float64
 	min1 = 999999999.0
 	for i:=start; i<end; i++ {
-		for j:=0; j<len(X); j++ {
-			dist := edist(X[i], X[j])
-			//fmt.Printf("%.8f ", dist)
-			if i!=j && dist<min1 {
-				min1 = dist
-			}
+		dist := edist(X[i], X[N])
+		fmt.Printf("%.8f ", dist)
+		if dist<min1 {
+			min1 = dist
 		}
-		//fmt.Println()
 	}
+	fmt.Println()
+
 	ch<- fmt.Sprintf("%.16f", min1)
 }
 
@@ -79,10 +84,10 @@ func main(){
 
 	readData()
 
-	fmt.Println("num= ", len(X), "\tdim= ", len(X[0]))
+	fmt.Println("num= ", N, "\tdim= ", len(X[0]))
 
 
-	seg = len(X)/GONUM
+	seg = N/GONUM
 
 	start := time.Now()
 
@@ -90,7 +95,7 @@ func main(){
 		channel[i] = make(chan string)
 		var end int
 		if i+1==GONUM { 
-			end = len(X) // 对seg计算整除有余数的情况
+			end = N // 对seg计算整除有余数的情况
 		} else {
 			end = i*seg+seg
 		}
@@ -106,7 +111,7 @@ func main(){
 		}
 	}
 
-	fmt.Printf("goroutine: %d\tdist times: %d\tmin= %.8f\n", GONUM, len(X)*len(X), min)
+	fmt.Printf("goroutine: %d\tdist times: %d\tmin= %.8f\n", GONUM, N, min)
 
 	elapsed := time.Since(start)
 	fmt.Printf("[Time taken: %.10fs %v]\n", elapsed.Seconds(), elapsed)
