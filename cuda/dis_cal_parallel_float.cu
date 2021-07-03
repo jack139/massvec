@@ -5,64 +5,63 @@
 #include <time.h>
 #include "cuda_fp16.h"
 
-// float16 半精度计算 100万2048维向量，占显存4G
-// 注意：精度降低可能导致计算结果错误
+// float32 版本，100万2048维向量，显存占用超过8G
 
 using namespace std;
 
 const int D = 2048;
 const int N1 = 10000; // 数据文件条数
-const int D1 = 100; // 数据重复倍数，方便模拟海量数据
-const unsigned long N = N1*D1;
+const int D1 = 1; // 数据重复倍数，方便模拟海量数据
+const long N = N1*D1;
 
 
-__global__ void cal_dis(half *train_data, half *test_data, half *dis, int pitch)
+__global__ void cal_dis(float *train_data, float *test_data, float *dis, int pitch)
 {
 	//long tid = blockIdx.x;
-	unsigned long tid = threadIdx.x + blockIdx.x * blockDim.x;
+	long tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if(tid<N)
 	{
-		half temp = 0.0;
-		half sum = 0.0;
+		float temp = 0.0;
+		float sum = 0.0;
 		for(int i=0;i<D;i++)
 		{
-			temp = __hsub(*((half*)((char*)train_data + tid * pitch) + i), test_data[i]);
-			sum = __hadd(sum, __hmul(temp, temp));
+			temp = *((float*)((char*)train_data + tid * pitch) + i) - test_data[i];
+			sum += temp * temp;
 		}
 		dis[tid] = sum;
 	}
 }
 
-void print(half *data)
+void print(float *data)
 {
 	cout<<"training data:"<<endl;
-	for(unsigned long i=0;i<N;i++)
+	for(long i=0;i<N;i++)
 	{
 		for(int j=0;j<D;j++)
 		{
-			cout<< fixed << setprecision(8)<<__half2float(*(data+i*D+j))<<" ";
+			cout<< fixed << setprecision(8)<<*(data+i*D+j)<<" ";
 		}
 		cout<<endl;
 	}
 }
  
-void print(half *data, unsigned long n)
+void print(float *data, int n)
 {
-	for(unsigned long i=0;i<n;i++)
+	for(int i=0;i<n;i++)
 	{
-		cout<< fixed << setprecision(8)<<__half2float(data[i])<<" ";
+		cout<< fixed << setprecision(8)<<data[i]<<" ";
 	}
 	cout<<endl;
 }
 
 
-int read_data(half *data_set)
+int read_data(float *data_set)
 {
 	float f1;
 	const char s[2] = ",";
 	char *token, *line;
 	FILE *fp;
-	half test[D];
+	float test[D];
 
 	// 一个数字假设占20字符，目前是保留16位小数，一共18个字符
 	line = (char *)malloc(20*D*sizeof(char)); 
@@ -83,7 +82,7 @@ int read_data(half *data_set)
 			{
 				f1 = atof(token);
 				//printf("%.8f ", f1);
-				*(data_set+i*D+j)=__float2half(f1*10.0); // 增加10倍的精度
+				*(data_set+i*D+j)=f1;
 
 				token = strtok(NULL, s);
 				j++;
@@ -118,10 +117,10 @@ int main()
 {
 	
 
-	half *h_train_data, *h_test_data;
-	half distance[N];
+	float *h_train_data, *h_test_data;
+	float distance[N];
  
-	half *d_train_data , *d_test_data , *d_dis;
+	float *d_train_data , *d_test_data , *d_dis;
  
 	float time1, time2;
 
@@ -146,19 +145,19 @@ int main()
 
 	cout<<"num= "<<N<<"\tdim= "<<D<<endl;
 
-	h_train_data = (half*)malloc((N+1)*D*sizeof(half));
+	h_train_data = (float*)malloc((N+1)*D*sizeof(float));
 	if (h_train_data==NULL){
 		puts("alloc memory fail!");
 		exit(-1);
 	}
 
 	size_t pitch_d;
-	size_t pitch_h = D * sizeof(half) ; 
+	size_t pitch_h = D * sizeof(float) ; 
 
 	//allocate memory on GPU 
-	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(half), N); 
-	cudaMalloc((void**)&d_test_data, D*sizeof(half));
-	cudaMalloc((void**)&d_dis, N*sizeof(half)); // d_ids[N] 存最小值
+	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(float), N); 
+	cudaMalloc((void**)&d_test_data, D*sizeof(float));
+	cudaMalloc((void**)&d_dis, N*sizeof(float)); // d_ids[N] 存最小值
 
 	//initialize training data
 	read_data(h_train_data);
@@ -172,12 +171,12 @@ int main()
 	cudaEventRecord(start1, 0);
 
 	//copy training and testing data from host to device
-	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(half), N, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_test_data, h_test_data, D*sizeof(half), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_dis, distance, N*sizeof(half), cudaMemcpyHostToDevice);
+	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(float), N, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_test_data, h_test_data, D*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_dis, distance, N*sizeof(float), cudaMemcpyHostToDevice);
  
 	// 定义kernel的执行配置
-	dim3 blockSize(256);
+	dim3 blockSize(1);
 	dim3 gridSize((N + blockSize.x - 1) / blockSize.x);
 	printf("grid size: %d\tblock size: %d\n", gridSize.x, blockSize.x);
 	// 执行kernel
@@ -187,20 +186,12 @@ int main()
 	//cal_dis<<<N,1>>>(d_train_data,d_test_data,d_dis,pitch_d);
  
 	//copy distance data from device to host
-	cudaMemcpy(distance, d_dis, N*sizeof(half), cudaMemcpyDeviceToHost);
+	cudaMemcpy(distance, d_dis, N*sizeof(float), cudaMemcpyDeviceToHost);
 
 	cudaEventRecord(stop1, 0);
 
-	// 找最小值
-	float minimum = __half2float(distance[0]);
-	unsigned long min_pos = 0;
-	for(unsigned long i=1;i<N;i++) {
-		float tmp_dis = __half2float(distance[i]);
-		if (tmp_dis<minimum) {
-			minimum=tmp_dis;
-			min_pos=i;
-		}
-	}
+	float minimum = distance[0];
+	for(long i=1;i<N;i++) if (distance[i]<minimum) minimum=distance[i];
 
 	cudaEventRecord(stop2, 0);
  
@@ -212,7 +203,7 @@ int main()
 	cudaFree(d_dis);
 	free(h_train_data);
 	
-	printf("min= %.8f\tpos= %ld\n", minimum, min_pos);
+	cout << "min= " << fixed << setprecision(8) << minimum << endl;
 
 	cudaEventElapsedTime(&time1, start1, stop1);
 	cudaEventElapsedTime(&time2, stop1, stop2);

@@ -2,17 +2,18 @@
 
 
 ### 8核8G i5笔记本
+> Go语言版本使用 float32 计算结果
 
 ```
-processor	: 7
-vendor_id	: GenuineIntel
-cpu family	: 6
-model		: 142
-model name	: Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
-stepping	: 12
-microcode	: 0xb2
-cpu MHz		: 3759.463
-cache size	: 6144 KB
+processor	: 11
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 5 1600X Six-Core Processor
+stepping	: 1
+microcode	: 0x8001129
+cpu MHz		: 3600.000
+cache size	: 512 KB
 ```
 
 ```
@@ -23,52 +24,29 @@ dist times: 1000000
 
 $ go run edist2.go 
 num=  1000000 	dim=  2048
-dist times: 1000000	min= 314.18320066
-[Time taken: 2.5643539700s 2.56435397s]
+min= 309.78689575	pos=8730
+[Time taken: 1.7521530800s 1.75215308s]
 
 $ go run edist3.go 
 num=  1000000 	dim=  2048
-goroutine: 8	dist times: 1000000	min= 314.18320066
-[Time taken: 0.6264369020s 626.436902ms]
+goroutine: 12	min= 309.78689575
+[Time taken: 0.2260935900s 226.09359ms]
 ```
 
-### 4核16G Xeon服务器
 
-```
-processor	: 3
-vendor_id	: GenuineIntel
-cpu family	: 6
-model		: 85
-model name	: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
-stepping	: 7
-microcode	: 0x1
-cpu MHz		: 2499.998
-cache size	: 36608 KB
-```
+### RTX 2070 SUPER
+> float16 半精度计算结果
 
-```
-# python3 edist2.py 
-num=  1000 	dim=  2048
-dist times: 1000000
-[Time taken: 0:00:11.105829]
-
-# ./edist2 
-num=  1000 	dim=  2048
-dist times: 1000000
-[Time taken: 2.8235832940s 2.823583294s]
-```
-
-### Tesla T4
 ```
 $ ./edistCUDA
-num= 10000 	dim= 2048
-[ Time taken: 0.021270s ]
+num= 10000	dim= 2048
+grid size: 40	block size: 256
+min= 30224.00000000	pos= 8730
+[ time taken: 7.078784ms 0.134784ms ]
 
 $ ./edistCUDA
-num= 100000 	dim= 2048
-[ Time taken: 0.207766s ]
-
-$ ./edistCUDA
-num= 1000000 	dim= 2048
-[ Time taken: 0.072613s ]
+num= 1000000	dim= 2048
+grid size: 3907	block size: 256
+min= 30224.00000000	pos= 8730
+[ time taken: 682.562561ms 11.519328ms ]
 ```

@@ -11,12 +11,12 @@ import (
 
 // go routine 数量, 建议与cpu核数一致
 const (
-	GONUM = 8
+	GONUM = 12
 	D = 100 // 翻倍，模拟海量数据
 )
 
 var (
-	X [][]float64
+	X [][]float32
 	N int
 )
 
@@ -34,10 +34,10 @@ func readData(){
 	for i:=0;i<len(lines);i++ {
 		if len(lines[i])==0 { continue } // 过滤掉空行
 		xx := strings.Split(lines[i], ",")
-		X = append(X, make([]float64, 0))
+		X = append(X, make([]float32, 0))
 		for _,fs := range xx {
-			f, _ := strconv.ParseFloat(fs, 64)
-			X[N+i] = append(X[N+i], f)
+			f, _ := strconv.ParseFloat(fs, 32)
+			X[N+i] = append(X[N+i], float32(f))
 			//fmt.Printf("%.8f ", f)
 		}
 		//fmt.Println()
@@ -57,8 +57,8 @@ func readData(){
 }
 
 // 计算欧式距离, 不开根号
-func edist(x []float64, y []float64) float64 {
-	var sum float64
+func edist(x []float32, y []float32) float32 {
+	var sum float32
 	sum = 0.0
 	for i:=0;i<len(x);i++ {
 		sum += (x[i]-y[i])*(x[i]-y[i])
@@ -71,7 +71,7 @@ func edist(x []float64, y []float64) float64 {
 // 用X中最后1个向量做测试
 func findMin(start int, end int, ch chan string) {
 	//fmt.Println("-->", start, end)
-	var min1 float64
+	var min1 float32
 	min1 = 999999999.0
 	for i:=start; i<end; i++ {
 		dist := edist(X[i], X[N])
@@ -86,7 +86,7 @@ func findMin(start int, end int, ch chan string) {
 }
 
 func main(){
-	var min float64
+	var min float32
 	var seg int
 	min = 99999.0
 	channel := make([]chan string, GONUM)
@@ -114,9 +114,9 @@ func main(){
 	// 取得返回结果
 	for _, rc := range(channel) {
 		t := <-rc
-		f, _ := strconv.ParseFloat(t, 64)
-		if f<min {
-			min = f
+		f, _ := strconv.ParseFloat(t, 32)
+		if float32(f)<min {
+			min = float32(f)
 		}
 	}
 

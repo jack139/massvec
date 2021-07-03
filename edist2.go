@@ -14,8 +14,7 @@ const (
 )
 
 var (
-	X [][]float64
-	min float64
+	X [][]float32
 	N int
 )
 
@@ -33,10 +32,10 @@ func readData(){
 	for i:=0;i<len(lines);i++ {
 		if len(lines[i])==0 { continue } // 过滤掉空行
 		xx := strings.Split(lines[i], ",")
-		X = append(X, make([]float64, 0))
+		X = append(X, make([]float32, 0))
 		for _,fs := range xx {
-			f, _ := strconv.ParseFloat(fs, 64)
-			X[N+i] = append(X[N+i], f)
+			f, _ := strconv.ParseFloat(fs, 32)
+			X[N+i] = append(X[N+i], float32(f))
 			//fmt.Printf("%.8f ", f)
 		}
 		//fmt.Println()
@@ -56,8 +55,8 @@ func readData(){
 }
 
 // 计算欧式距离,  不开根号
-func edist(x []float64, y []float64) float64 {
-	var sum float64
+func edist(x []float32, y []float32) float32 {
+	var sum float32
 	sum = 0.0
 	for i:=0;i<len(x);i++ {
 		sum += (x[i]-y[i])*(x[i]-y[i])
@@ -69,7 +68,10 @@ func edist(x []float64, y []float64) float64 {
 
 
 func main(){
+	var min float32
+	var minPos int
 	min = 9999999999.0
+	minPos = 0
 
 	readData()
 
@@ -82,11 +84,12 @@ func main(){
 		//fmt.Printf("%.8f ", dist)
 		if dist<min {
 			min = dist
+			minPos = i
 		}
 	}
 	//fmt.Println()
 
-	fmt.Printf("min= %.8f\n", min)
+	fmt.Printf("min= %.8f\tpos=%d\n", min, minPos)
 
 	elapsed := time.Since(start)
 	fmt.Printf("[Time taken: %.10fs %v]\n", elapsed.Seconds(), elapsed)
