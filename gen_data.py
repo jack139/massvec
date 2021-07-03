@@ -3,8 +3,8 @@
 from datetime import datetime
 import numpy as np
 
-dim = 10
-n = 10
+dim = 2048
+n = 10000
 
 ff = open('vector.data', 'w')
 

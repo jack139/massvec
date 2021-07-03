@@ -1,4 +1,3 @@
-#include <sys/time.h>
 #include <iostream>   
 #include <iomanip>                                                                                                    
 #include <stdio.h>
@@ -10,8 +9,9 @@ using namespace std;
 
 const int D = 2048;
 const int N1 = 10000; // 数据文件条数
-const int D1 = 1; // 数据重复倍数，方便模拟海量数据
+const int D1 = 80; // 数据重复倍数，方便模拟海量数据
 const long N = N1*D1;
+
 
 __global__ void cal_dis(float *train_data, float *test_data, float *dis, int pitch)
 {
@@ -112,13 +112,18 @@ int read_data(float *data_set)
 
 int main()
 {
+	
+
 	float *h_train_data, *h_test_data;
 	float distance[N];
  
 	float *d_train_data , *d_test_data , *d_dis;
  
-	struct timeval t1,t2;
-	double timeuse;
+	float time1;
+
+	cudaEvent_t start1, stop1;
+	cudaEventCreate(&start1);
+	cudaEventCreate(&stop1); 
 
 	cout<<"num= "<<N<<"\tdim= "<<D<<endl;
 
@@ -134,7 +139,7 @@ int main()
 	//allocate memory on GPU 
 	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(float), N); 
 	cudaMalloc((void**)&d_test_data, D*sizeof(float));
-	cudaMalloc((void**)&d_dis, N*sizeof(float));
+	cudaMalloc((void**)&d_dis, (N+1)*sizeof(float)); // d_ids[N] 存最小值
 
 	//initialize training data
 	read_data(h_train_data);
@@ -145,19 +150,26 @@ int main()
 	cout<<"testing data:"<<endl;
 	//print(h_test_data,D);
  
-	gettimeofday(&t1,NULL);
+	cudaEventRecord(start1, 0);
 
 	//copy training and testing data from host to device
 	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(float), N, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_test_data, h_test_data, D*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_dis, distance, N*sizeof(float), cudaMemcpyHostToDevice);
  
+
 	//calculate the distance
 	cal_dis<<<N,1>>>(d_train_data,d_test_data,d_dis,pitch_d);
  
 	//copy distance data from device to host
 	cudaMemcpy(distance, d_dis, N*sizeof(float), cudaMemcpyDeviceToHost);
 
-	gettimeofday(&t2, NULL);
+	cudaEventRecord(stop1, 0);
+
+	float minimum = distance[0];
+	for(long i=1;i<N;i++) if (distance[i]<minimum) minimum=distance[i];
+
+	//cudaEventRecord(stop1, 0);
  
 	cout<<"distance:"<<endl;
 	//print(distance, N);
@@ -166,10 +178,11 @@ int main()
 	cudaFree(d_test_data);
 	cudaFree(d_dis);
 	free(h_train_data);
-	 
-	timeuse = (t2.tv_sec - t1.tv_sec) + (double)(t2.tv_usec - t1.tv_usec)/1000000.0;
-	cout << "[ time taken: " << fixed << setprecision(6) << timeuse << "s ]" << endl;
+	
+	cout << "min= " << fixed << setprecision(8) << minimum << endl;
 
+	cudaEventElapsedTime(&time1, start1, stop1);
+	printf("[ time taken: %f ms ]\n",time1);
 
 
 	return 0;

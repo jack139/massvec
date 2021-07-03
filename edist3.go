@@ -120,7 +120,7 @@ func main(){
 		}
 	}
 
-	fmt.Printf("goroutine: %d\tdist times: %d\tmin= %.8f\n", GONUM, N, min)
+	fmt.Printf("goroutine: %d\tmin= %.8f\n", GONUM, min)
 
 	elapsed := time.Since(start)
 	fmt.Printf("[Time taken: %.10fs %v]\n", elapsed.Seconds(), elapsed)

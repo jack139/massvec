@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	D = 1 // 翻倍，模拟海量数据
+	D = 100 // 翻倍，模拟海量数据
 )
 
 var (
@@ -86,7 +86,7 @@ func main(){
 	}
 	//fmt.Println()
 
-	fmt.Printf("dist times: %d\tmin= %.8f\n", N, min)
+	fmt.Printf("min= %.8f\n", min)
 
 	elapsed := time.Since(start)
 	fmt.Printf("[Time taken: %.10fs %v]\n", elapsed.Seconds(), elapsed)
