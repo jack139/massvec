@@ -8,6 +8,7 @@ with open("vector.data") as f:
 
 X = []
 minimal = 99999999999
+min_pos = 0
 
 for i in data:
     X.append(np.array([float(x) for x in i.split(",")]))
@@ -25,9 +26,10 @@ for i in range(N):
     dist2 = np.sum(np.square(X[i]-X[N])) # 不开根号
     if dist2<minimal:
         minimal = dist2
-    print("%.8f"%dist2, end=" ")
-print()
+        min_pos = i
+    #print("%.8f"%dist2, end=" ")
+#print()
 
-print("dist times: %d\tmin= %.8f"%(len(X)*len(X), minimal))
+print("min= %.8f\tpos= %d"%(minimal, min_pos))
 print('[Time taken: {!s}]'.format(datetime.now() - start_time))
 
