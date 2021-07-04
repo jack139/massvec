@@ -7,18 +7,29 @@
 
 // float32 版本，100万2048维向量，显存占用超过8G
 
+#define CHECK(call) \
+{ \
+	const cudaError_t error = call; \
+	if (error != cudaSuccess) \
+	{ \
+		printf("Error: %s: %d, ", __FILE__, __LINE__); \
+		printf("code: %d, reason: %s\n", error, cudaGetErrorString(error)); \
+		exit(-1); \
+	} \
+}
+
 using namespace std;
 
 const int D = 2048;
 const int N1 = 10000; // 数据文件条数
-const int D1 = 1; // 数据重复倍数，方便模拟海量数据
-const long N = N1*D1;
+const int D1 = 50; // 数据重复倍数，方便模拟海量数据
+const unsigned long N = N1*D1;
 
 
 __global__ void cal_dis(float *train_data, float *test_data, float *dis, int pitch)
 {
 	//long tid = blockIdx.x;
-	long tid = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned long tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if(tid<N)
 	{
 		float temp = 0.0;
@@ -35,7 +46,7 @@ __global__ void cal_dis(float *train_data, float *test_data, float *dis, int pit
 void print(float *data)
 {
 	cout<<"training data:"<<endl;
-	for(long i=0;i<N;i++)
+	for(unsigned long i=0;i<N;i++)
 	{
 		for(int j=0;j<D;j++)
 		{
@@ -129,7 +140,7 @@ int main()
 	// 显示GPU资源
 	int dev = 0;
     cudaDeviceProp devProp;
-    cudaGetDeviceProperties(&devProp, dev);
+    CHECK(cudaGetDeviceProperties(&devProp, dev));
     std::cout << "使用GPU device " << dev << ": " << devProp.name << std::endl;
     std::cout << "SM的数量：" << devProp.multiProcessorCount << std::endl;
     std::cout << "每个线程块的共享内存大小：" << devProp.sharedMemPerBlock / 1024.0 << " KB" << std::endl;
@@ -155,9 +166,9 @@ int main()
 	size_t pitch_h = D * sizeof(float) ; 
 
 	//allocate memory on GPU 
-	cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(float), N); 
-	cudaMalloc((void**)&d_test_data, D*sizeof(float));
-	cudaMalloc((void**)&d_dis, N*sizeof(float)); // d_ids[N] 存最小值
+	CHECK(cudaMallocPitch( &d_train_data, &pitch_d, D*sizeof(float), N)); 
+	CHECK(cudaMalloc((void**)&d_test_data, D*sizeof(float)));
+	CHECK(cudaMalloc((void**)&d_dis, N*sizeof(float))); // d_ids[N] 存最小值
 
 	//initialize training data
 	read_data(h_train_data);
@@ -165,18 +176,18 @@ int main()
  
 	//initialize testing data
 	h_test_data = h_train_data+D*N;
-	cout<<"testing data:"<<endl;
+	//cout<<"testing data:"<<endl;
 	//print(h_test_data,D);
  
-	cudaEventRecord(start1, 0);
+	
 
 	//copy training and testing data from host to device
 	cudaMemcpy2D(d_train_data, pitch_d, h_train_data, pitch_h, D*sizeof(float), N, cudaMemcpyHostToDevice);
+	cudaEventRecord(start1, 0); // 批量数据复制进GPU的耗时，不计入，现实中会提前载入
 	cudaMemcpy(d_test_data, h_test_data, D*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_dis, distance, N*sizeof(float), cudaMemcpyHostToDevice);
  
 	// 定义kernel的执行配置
-	dim3 blockSize(1);
+	dim3 blockSize(256);
 	dim3 gridSize((N + blockSize.x - 1) / blockSize.x);
 	printf("grid size: %d\tblock size: %d\n", gridSize.x, blockSize.x);
 	// 执行kernel
@@ -191,11 +202,17 @@ int main()
 	cudaEventRecord(stop1, 0);
 
 	float minimum = distance[0];
-	for(long i=1;i<N;i++) if (distance[i]<minimum) minimum=distance[i];
+	unsigned long min_pos = 0;
+	for(unsigned long i=1;i<N;i++) {
+		if (distance[i]<minimum) {
+			minimum=distance[i];
+			min_pos=i;
+		}
+	}
 
 	cudaEventRecord(stop2, 0);
  
-	cout<<"distance:"<<endl;
+	//cout<<"distance:"<<endl;
 	//print(distance, N);
 
 	cudaFree(d_train_data);
@@ -203,7 +220,7 @@ int main()
 	cudaFree(d_dis);
 	free(h_train_data);
 	
-	cout << "min= " << fixed << setprecision(8) << minimum << endl;
+	printf("min= %.8f\tpos= %ld\n", minimum, min_pos);
 
 	cudaEventElapsedTime(&time1, start1, stop1);
 	cudaEventElapsedTime(&time2, stop1, stop2);

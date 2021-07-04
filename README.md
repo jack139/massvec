@@ -41,12 +41,18 @@ goroutine: 12	min= 309.78689575
 $ ./edistCUDA
 num= 10000	dim= 2048
 grid size: 40	block size: 256
-min= 30224.00000000	pos= 8730
-[ time taken: 7.078784ms 0.134784ms ]
+min= 29696.00000000	pos= 5472
+[ time taken: 0.797504ms 0.162752ms ]
+
+$ ./edistCUDA
+num= 100000	dim= 2048
+grid size: 391	block size: 256
+min= 29696.00000000	pos= 5472
+[ time taken: 7.022944ms 1.170176ms ]
 
 $ ./edistCUDA
 num= 1000000	dim= 2048
 grid size: 3907	block size: 256
-min= 30224.00000000	pos= 8730
-[ time taken: 682.562561ms 11.519328ms ]
+min= 29696.00000000	pos= 5472
+[ time taken: 64.260994ms 12.235360ms ]
 ```
