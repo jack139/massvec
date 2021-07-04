@@ -89,9 +89,11 @@ endif
 ################################################################################
 
 # Target rules
-all: build
+all: fp32 fp16 edist
 
-build: edistCUDA
+fp32: edistCUDAfp32
+fp16: edistCUDAfp16
+edist: edistCUDA
 
 check.deps:
 ifeq ($(SAMPLE_ENABLED),0)
@@ -100,15 +102,18 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
-edistCUDA.o: dis_cal_parallel.cu
+%.o: %.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-edistCUDA: edistCUDA.o
+edistCUDAfp32: dis_cal_parallel_float.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 
-run: build
-	$(EXEC) ./edistCUDA
+edistCUDAfp16: dis_cal_parallel_fp16.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
+
+edistCUDA: dis_cal_parallel.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 
 clean:
-	rm -f edistCUDA *.o
+	rm -f edistCUDA* *.o
 
